@@ -1,0 +1,35 @@
+# HTTP Server
+server:
+  port: 8080
+
+spring:
+  application:
+    name: pos-gateway
+  # freemarker:
+  #   enabled: true # Use Eureka dashboard FreeMarker templates
+  cloud:
+    gateway:
+      routes:
+        - id: pos-product
+          uri: http://localhost:8082
+          predicates:
+          - Path=/api/**
+        # - id: posCarts
+        #   uri: http://localhost:8084
+        #   predicates:
+        #   - Path=/carts/**
+
+# error.path: /error
+
+# Discovery Server Access
+#  1. DEV ONLY: Reduce the lease renewal interval to speed up registration
+#  2. Define URL of registration server (defaultZone)
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    instance:
+      # leaseRenewalIntervalInSeconds: 10
+      hostname: localhost
