@@ -1,22 +1,20 @@
 package com.example.posproduct.service;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.example.posproduct.model.Product;
+import com.example.posproduct.repository.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
-import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.stereotype.Service;
 
-import com.example.posproduct.model.Product;
-import com.example.posproduct.repository.ProductRepository;
-
-import jakarta.transaction.Transactional;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -25,7 +23,7 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductRepository productRepository;
 
-    private CurcuitBreakerFactory curcuitBreakerFactory;
+    private Resilience4JCircuitBreakerFactory circuitBreakerFactory;
 
     @Autowired
     public void setProductRepository(ProductRepository productRepository) {
@@ -33,12 +31,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Autowired
-    public void setCurcuitBreakerFactory(CurcuitBreakerFactory curcuitBreakerFactory) {
-        this.curcuitBreakerFactory = curcuitBreakerFactory;
+    public void setCircuitBreakerFactory(Resilience4JCircuitBreakerFactory circuitBreakerFactory) {
+        this.circuitBreakerFactory = circuitBreakerFactory;
     }
 
     @Override
     public List<Product> getProducts() {
+        CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
+        return circuitBreaker.run(this::tryGetProducts, throwable -> getDefaultProductList());
+    }
+
+    private List<Product> tryGetProducts() {
         try {
             if (products == null) {
                 products = parseJD("Java");
@@ -49,6 +52,13 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findAll();
     }
 
+    private List<Product> getDefaultProductList() {
+        List<Product> defaultProductList = new ArrayList<>();
+        Product defaultProduct = new Product("default", "default", "default", "default", 100, "default", 1, "default.png");
+        defaultProductList.add(defaultProduct);
+        return defaultProductList;
+    }
+
     @Override
     @Transactional
     public Product findByID(String productId) {
@@ -57,10 +67,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public boolean updateProductQuantityById(String productId, int quantity) {
-        if (productRepository.updateProductQuantityById(productId, quantity) > 0) {
-            return true;
-        }
-        return false;
+        return productRepository.updateProductQuantityById(productId, quantity) > 0;
     }
 
     public List<Product> parseJD(String keyword) throws IOException {
@@ -89,7 +96,7 @@ public class ProductServiceImpl implements ProductService {
             String img = "https:".concat(el.getElementsByTag("img").eq(0).attr("data-lazy-img"));
             String price = el.getElementsByAttribute("data-price").text();
             String title = el.getElementsByClass("p-name").eq(0).text();
-            if (title.indexOf("，") >= 0)
+            if (title.contains("，"))
                 title = title.substring(0, title.indexOf("，"));
             // System.out.println(img);
             Product product = new Product(id, id, price, "Java", Math.max((int)(Math.random() * 30), 10), title, 1, img);
