@@ -31,11 +31,11 @@ public class OrderController {
     public ResponseEntity<?> placeOrder(@RequestBody OrderRequestDto orderRequestDto) {
         System.out.println("in orders");
         OrderRequest orderRequest = orderMapper.map(orderRequestDto, OrderRequest.class);
-        boolean status = orderService.placeOrder(orderRequest);
-        if (status) {
-            return new ResponseEntity<>(HttpStatus.OK);
+        try {
+            return orderService.placeOrder(orderRequest);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
     
 }

@@ -7,6 +7,7 @@ import com.example.posorder.model.OrderRequest;
 import com.example.posorder.repository.OrderRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -29,20 +30,21 @@ public class OrderServiceImpl implements OrderService {
     }
     
     @Transactional
-    public boolean placeOrder(OrderRequest orderRequest) {
+    @CircuitBreaker(name = "circuitbreaker", fallbackMethod = "handle")
+    public ResponseEntity<?> placeOrder(OrderRequest orderRequest) throws Exception {
         List<OrderItemRequest> items = orderRequest.getItems();
         for (OrderItemRequest item: items) {
             HttpHeaders headers = new HttpHeaders();
             // headers.setContentType(MediaType.APPLICATION_JSON); 
             HttpEntity<ProductDto> requestEntity = new HttpEntity<>(null, headers);
             ResponseEntity<ProductDto> response = restTemplate.exchange(PRODUCT_SERVICE_URL + item.getProductId(), HttpMethod.GET, requestEntity, ProductDto.class);
-            
+
             if (response.getStatusCode() != HttpStatus.OK) {
-                return false;
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
             ProductDto product = response.getBody();
             if (product == null || product.getQuantity() < item.getQuantity()) {
-                return false;
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             } else {
                 item.setQuantity(product.getQuantity() - item.getQuantity()); // update target quantity
             }
@@ -55,9 +57,14 @@ public class OrderServiceImpl implements OrderService {
             ResponseEntity<Void> response = restTemplate.exchange(PRODUCT_SERVICE_URL + "update", HttpMethod.POST, requestEntity, Void.class);
             if (response.getStatusCode() != HttpStatus.OK) {
                 System.err.println("stock update failed for product " + item.getProductId() + " with quantity " + item.getQuantity());
-                return false;
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         }
-        return true;
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private ResponseEntity<?> handle(Throwable throwable) {
+        System.out.println("throwable");
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
