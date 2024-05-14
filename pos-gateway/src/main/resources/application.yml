@@ -11,13 +11,57 @@ spring:
     gateway:
       routes:
         - id: pos-product
-          uri: http://localhost:8082
+          uri: lb://pos-product
           predicates:
-          - Path=/api/**
-        # - id: posCarts
-        #   uri: http://localhost:8084
-        #   predicates:
-        #   - Path=/carts/**
+          - Path=/api/products/**
+          metadata:
+            cors:
+              allowedOrigins: '*'
+              allowedMethods:
+                - GET
+                - POST
+                - OPTIONS
+              allowedHeaders: '*'
+              maxAge: 30
+        - id: pos-product-setting
+          uri: lb://pos-product
+          predicates:
+            - Path=/api/settings
+          metadata:
+            cors:
+              allowedOrigins: '*'
+              allowedMethods:
+                - GET
+                - POST
+                - OPTIONS
+              allowedHeaders: '*'
+              maxAge: 30
+        - id: pos-product-categories
+          uri: lb://pos-product
+          predicates:
+            - Path=/api/categories
+          metadata:
+            cors:
+              allowedOrigins: '*'
+              allowedMethods:
+                - GET
+                - POST
+                - OPTIONS
+              allowedHeaders: '*'
+              maxAge: 30
+        - id: pos-order
+          uri: lb://pos-order
+          predicates:
+          - Path=/api/orders/**
+          metadata:
+            cors:
+              allowedOrigins: '*'
+              allowedMethods:
+                - GET
+                - POST
+                - OPTIONS
+              allowedHeaders: '*'
+              maxAge: 30
 
 # error.path: /error
 
@@ -33,3 +77,7 @@ eureka:
     instance:
       # leaseRenewalIntervalInSeconds: 10
       hostname: localhost
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG

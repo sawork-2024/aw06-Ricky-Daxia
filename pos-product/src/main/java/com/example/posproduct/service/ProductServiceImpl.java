@@ -42,13 +42,18 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private List<Product> tryGetProducts() {
-        try {
-            if (products == null) {
-                products = parseJD("Java");
-            }
-        } catch (IOException e) {
-            products = new ArrayList<>();
-        }
+//        try {
+//            TimeUnit.SECONDS.sleep(5);
+//        } catch (InterruptedException ignored) {
+//
+//        }
+//        try {
+//            if (products == null) {
+//                products = parseJD("Java");
+//            }
+//        } catch (IOException e) {
+//            products = new ArrayList<>();
+//        }
         return productRepository.findAll();
     }
 
@@ -58,6 +63,26 @@ public class ProductServiceImpl implements ProductService {
         defaultProductList.add(defaultProduct);
         return defaultProductList;
     }
+
+//    @Override
+//    @CircuitBreaker(name = "circuitbreaker", fallbackMethod = "getDefaultProductList")
+//    public List<Product> getProducts() {
+//        try {
+//            if (products == null) {
+//                products = parseJD("Java");
+//            }
+//        } catch (IOException e) {
+//            products = new ArrayList<>();
+//        }
+//        return productRepository.findAll();
+//    }
+//
+//    private List<Product> getDefaultProductList(Exception e) {
+//        List<Product> defaultProductList = new ArrayList<>();
+//        Product defaultProduct = new Product("default", "default", "default", "default", 100, "default", 1, "default.png");
+//        defaultProductList.add(defaultProduct);
+//        return defaultProductList;
+//    }
 
     @Override
     @Transactional
@@ -99,7 +124,7 @@ public class ProductServiceImpl implements ProductService {
             if (title.contains("，"))
                 title = title.substring(0, title.indexOf("，"));
             // System.out.println(img);
-            Product product = new Product(id, id, price, "Java", Math.max((int)(Math.random() * 30), 10), title, 1, img);
+            Product product = new Product(id, id, price, "Java", Math.max((int)(Math.random() * 9001) + 1000, 3467), title, 1, img);
             // System.out.println(id);
             // System.out.println(img);
             // System.out.println(title);

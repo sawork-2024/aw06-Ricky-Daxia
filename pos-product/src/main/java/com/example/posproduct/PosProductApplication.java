@@ -18,6 +18,10 @@ import java.time.Duration;
 public class PosProductApplication {
 
 	public static void main(String[] args) {
+		if (args.length > 0) {
+			String port = args[0];
+			System.setProperty("server.port", port);
+		}
 		SpringApplication.run(PosProductApplication.class, args);
 	}
 

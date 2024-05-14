@@ -1,26 +1,23 @@
 package com.example.posproduct.controller;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.example.posproduct.dto.ItemDto;
+import com.example.posproduct.dto.ProductDto;
+import com.example.posproduct.model.Categories;
+import com.example.posproduct.model.Product;
+import com.example.posproduct.model.Setting;
+import com.example.posproduct.service.ProductService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.example.posproduct.dto.ItemDto;
-import com.example.posproduct.dto.ProductDto;
-import com.example.posproduct.model.Product;
-import com.example.posproduct.service.ProductService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-@CrossOrigin("*")
+//@CrossOrigin("*")
 @RequestMapping("api")
 @RestController
 public class ProductController {
@@ -35,8 +32,38 @@ public class ProductController {
         this.productService = productService;
     }
 
+    private AtomicInteger cnt = new AtomicInteger(0);
+
+    private void workload() {
+        int[] a = new int[100010];
+        int n = 100000;
+        for (int i = 0; i < n; i++) {
+            a[i] = n - i;
+        }
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (a[j] > a[j + 1]) {
+                    int temp = a[j];
+                    a[j] = a[j + 1];
+                    a[j + 1] = temp;
+                }
+            }
+        }
+    }
+
     @GetMapping("/products")
     public ResponseEntity<List<ProductDto>> getProducts() {
+        int x = cnt.getAndIncrement();
+        if (x > 50 && x % 2 == 1) {
+            System.out.println("heavy");
+            Thread thread = new Thread(this::workload);
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException ignored) {
+
+            }
+        }
         List<ProductDto> products = productService.getProducts().stream()
             .map(product -> productMapper.map(product, ProductDto.class)).collect(Collectors.toList());
         if (products == null) {
@@ -64,5 +91,19 @@ public class ProductController {
             return new ResponseEntity<>(HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+
+    @GetMapping("/settings")
+    public ResponseEntity<List<Setting>> getSettings() {
+        List<Setting> settings = new ArrayList<>();
+        settings.add(new Setting(1, "Standalone Point of Sale", "Store-Pos", "10086", "10087", "15968774896", "", "$", "10", "", "", "d36d"));
+        return new ResponseEntity<List<Setting>>(settings, HttpStatus.OK);
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<Categories>> getCategories() {
+        List<Categories> categories = new ArrayList<>();
+        categories.add(new Categories("1711853606", "drink", 1711853606));
+        return new ResponseEntity<List<Categories>>(categories, HttpStatus.OK);
     }
 }

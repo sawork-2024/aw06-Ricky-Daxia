@@ -10,3 +10,5 @@
 5. 如有兴趣可在kubernetes或者minikube上进行部署。
 
 请编写readme对自己的系统和实验进行详细介绍。
+
+实验详细记录[链接](https://pxe09in4bw.feishu.cn/docx/WzcWdmW37oLl2SxQPWpcuxhsnfg#N7uhd9i6EoLm05xdRDhc5p48nBe)
